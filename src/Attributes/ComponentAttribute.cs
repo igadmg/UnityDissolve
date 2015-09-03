@@ -4,7 +4,7 @@ namespace UnityDissolve
 {
 	public class ComponentAttribute : Attribute
 	{
-		public string name = null;
+		public string name = string.Empty;
 		
 		public ComponentAttribute()
 		{
@@ -18,8 +18,15 @@ namespace UnityDissolve
 
 	public class AddComponentAttribute : Attribute
 	{
+		public string name = string.Empty;
+
 		public AddComponentAttribute()
 		{
+		}
+
+		public AddComponentAttribute(string name)
+		{
+			this.name = name;
 		}
 	}
 }

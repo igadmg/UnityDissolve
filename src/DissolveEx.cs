@@ -8,10 +8,20 @@ namespace UnityDissolve
 {
 	public static class DissolveEx
 	{
-		private static Dictionary<Type, object> DissolveTypeCache = new Dictionary<Type, object>();
+		private static Dictionary<Type, DissolvedType> DissolveTypeCache = new Dictionary<Type, DissolvedType>();
 
 		public static T Dissolve<T>(this Transform transform, T o)
 		{
+			DissolvedType dissolvedType;
+			if (!DissolveTypeCache.TryGetValue(o.GetType(), out dissolvedType)) {
+				dissolvedType = new DissolvedType(o.GetType());
+				DissolveTypeCache.Add(o.GetType(), dissolvedType);
+			}
+
+			foreach (var filed in dissolvedType.AddComponentFields) {
+
+			}
+
 			if (o.GetType().HasAttribute<ComponentAttribute>()) {
 				foreach (var field in o.GetType().GetFieldsAndAttributes<ComponentAttribute>()) {
 					if (!field.Item1.FieldType.IsSubclassOf(typeof(UnityEngine.Object))) {
