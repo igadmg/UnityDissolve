@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using SystemEx;
 using UnityEngine;
 
@@ -10,58 +11,54 @@ namespace UnityDissolve
 	{
 		private static Dictionary<Type, DissolvedType> DissolveTypeCache = new Dictionary<Type, DissolvedType>();
 
-		public static T Dissolve<T>(this Transform transform, T o)
+		private static T DissolveImpl<T>(GameObject go, T o)
 		{
+			Transform transform = go.transform;
+
 			DissolvedType dissolvedType;
 			if (!DissolveTypeCache.TryGetValue(o.GetType(), out dissolvedType)) {
 				dissolvedType = new DissolvedType(o.GetType());
 				DissolveTypeCache.Add(o.GetType(), dissolvedType);
 			}
 
-			foreach (var filed in dissolvedType.AddComponentFields) {
+			foreach (var fieldDescription in dissolvedType.AddComponentFields) {
+				string objectPath = fieldDescription.Item1;
+				FieldInfo field = fieldDescription.Item2;
 
-			}
+				Component c = go.AddComponent(field.FieldType);
+				field.SetValue(o, c);
+            }
 
-			if (o.GetType().HasAttribute<ComponentAttribute>()) {
-				foreach (var field in o.GetType().GetFieldsAndAttributes<ComponentAttribute>()) {
-					if (!field.Item1.FieldType.IsSubclassOf(typeof(UnityEngine.Object))) {
-						Debug.LogWarning(field.Item1.Name + " is not a UnityObject. Only Component and GameObject members can be linked for type.");
-						continue;
-					}
+			foreach (var fieldDescription in dissolvedType.ComponentFields) {
+				string objectPath = fieldDescription.Item1;
+				FieldInfo field = fieldDescription.Item2;
 
-					field.Item1.SetValue(o, transform.Find(field.Item2.name, field.Item1.FieldType));
+				if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object))) {
+					field.SetValue(o, transform.Find(objectPath, field.FieldType));
 				}
-			}
-			else
-				foreach (var field in o.GetType().GetFieldsAndAttributes<ComponentAttribute>()) {
-					if (field.Item1.FieldType.IsSubclassOf(typeof(UnityEngine.Object))) {
-						field.Item1.SetValue(o, transform.Find(field.Item2.name, field.Item1.FieldType));
-					}
-					else {
-						if (field.Item1.FieldType.IsGenericType && field.Item1.FieldType.GetGenericTypeDefinition() == typeof(IList<>)) {
-							Type nodeType = field.Item1.FieldType.GetGenericArguments()[0];
-							if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
+				else if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(IList<>)) {
+					Type nodeType = field.FieldType.GetGenericArguments()[0];
+					if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
 
-							IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
+					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
 
-							foreach (Transform child in transform.Find(field.Item2.name)) {
-								if (nodeType.IsSubclassOf(typeof(UnityEngine.Object))) {
-									list.Add(child.gameObject.GetComponentOrThis(nodeType));
-								}
-								else {
-									object node = Activator.CreateInstance(nodeType);
-									list.Add(child.Dissolve(node));
-								}
-							}
-
-							field.Item1.SetValue(o, list);
+					foreach (Transform child in transform.Find(objectPath)) {
+						if (nodeType.IsSubclassOf(typeof(UnityEngine.Object))) {
+							list.Add(child.gameObject.GetComponentOrThis(nodeType));
 						}
 						else {
-							object node = Activator.CreateInstance(field.Item1.FieldType);
-							field.Item1.SetValue(o, transform.Dissolve(node));
+							object node = Activator.CreateInstance(nodeType);
+							list.Add(child.gameObject.Dissolve(node));
 						}
 					}
+
+					field.SetValue(o, list);
 				}
+				else {
+					object node = Activator.CreateInstance(field.FieldType);
+					field.SetValue(o, go.Dissolve(node));
+				}
+			}
 
 			return o;
 		}
@@ -92,14 +89,14 @@ namespace UnityDissolve
 			return o;
 		}
 
-		public static T Dissolve<T>(this GameObject c, T o)
+		public static T Dissolve<T>(this GameObject go, T o)
 		{
-			return c.transform.Dissolve(o);
+			return DissolveImpl(go, o);
 		}
 
 		public static T Dissolve<T>(this T c) where T : Component
 		{
-			return c.transform.Dissolve(c);
+			return DissolveImpl(c.gameObject, c);
 		}
 
 		public static T Dissolve<T, U>(this T c, Action<U> i) where T : Component
