@@ -19,8 +19,11 @@ namespace UnityDissolve
 			if (type.HasAttribute<ComponentAttribute>()) {
 				foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)) {
 					Type fieldType = field.FieldType;
+					bool fieldIsList = fieldType.IsList();
+					Type fieldListItemType = fieldIsList ? fieldType.GetListItemType() : null;
 
-					if (fieldType.IsSubclassOf(typeof(UnityEngine.Object))) {
+					if (fieldType.IsSubclassOf(typeof(UnityEngine.Object))
+						|| (fieldIsList && fieldListItemType.IsSubclassOf(typeof(UnityEngine.Object)))) {
 						bool processed = false;
 
 						foreach (var attribute in field.GetCustomAttributes(true)) {

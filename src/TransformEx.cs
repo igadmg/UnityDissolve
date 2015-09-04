@@ -27,7 +27,7 @@ namespace UnityDissolve
 
 		public static GameObject FindGameObject(this Transform transform, string name)
 		{
-			var t = name != null ? transform.Find(name) : transform;
+			var t = !string.IsNullOrEmpty(name) ? transform.Find(name) : transform;
 
 			if (t != null)
 				return t.gameObject;
@@ -39,7 +39,7 @@ namespace UnityDissolve
 
 		public static object Find(this Transform transform, string name, Type type)
 		{
-			var t = name != null ? transform.Find(name) : transform;
+			var t = !string.IsNullOrEmpty(name) ? transform.Find(name) : transform;
 
 			if (t != null)
 				return t.gameObject.GetComponentOrThis(type);

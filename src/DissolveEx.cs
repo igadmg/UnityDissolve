@@ -21,43 +21,47 @@ namespace UnityDissolve
 				DissolveTypeCache.Add(o.GetType(), dissolvedType);
 			}
 
+			///////////////////////////////////////////////////////////////////////////////////
+			// Process AddComponents first.
 			foreach (var fieldDescription in dissolvedType.AddComponentFields) {
 				string objectPath = fieldDescription.Item1;
 				FieldInfo field = fieldDescription.Item2;
 
 				Component c = go.AddComponent(field.FieldType);
 				field.SetValue(o, c);
-            }
+			}
 
+			///////////////////////////////////////////////////////////////////////////////////
+			// Process ComponentFields
 			foreach (var fieldDescription in dissolvedType.ComponentFields) {
 				string objectPath = fieldDescription.Item1;
 				FieldInfo field = fieldDescription.Item2;
+				GameObject fieldGameObject = transform.FindGameObject(objectPath);
 
 				if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object))) {
-					field.SetValue(o, transform.Find(objectPath, field.FieldType));
+					field.SetValue(o, fieldGameObject.GetComponent(field.FieldType));
 				}
-				else if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(IList<>)) {
-					Type nodeType = field.FieldType.GetGenericArguments()[0];
+				else if (field.FieldType.IsList()) {
+					Type nodeType = field.FieldType.GetListItemType();
 					if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
 
 					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
 
-					foreach (Transform child in transform.Find(objectPath)) {
-						if (nodeType.IsSubclassOf(typeof(UnityEngine.Object))) {
-							list.Add(child.gameObject.GetComponentOrThis(nodeType));
-						}
-						else {
-							object node = Activator.CreateInstance(nodeType);
-							list.Add(child.gameObject.Dissolve(node));
-						}
+					foreach (Component co in fieldGameObject.GetComponents(field.FieldType)) {
+						list.Add(co);
 					}
 
 					field.SetValue(o, list);
 				}
-				else {
-					object node = Activator.CreateInstance(field.FieldType);
-					field.SetValue(o, go.Dissolve(node));
-				}
+			}
+
+			foreach (var fieldDescription in dissolvedType.SubComponents) {
+				string objectPath = fieldDescription.Item1;
+				FieldInfo field = fieldDescription.Item2;
+				GameObject fieldGameObject = transform.FindGameObject(objectPath);
+
+				object node = Activator.CreateInstance(field.FieldType);
+				field.SetValue(o, fieldGameObject.Dissolve(node));
 			}
 
 			return o;
