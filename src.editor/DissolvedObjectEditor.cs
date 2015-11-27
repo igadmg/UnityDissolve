@@ -1,16 +1,28 @@
-﻿using UnityEditor;
+﻿using SystemEx;
+using UnityEditor;
 using UnityEngine;
 
 namespace UnityDissolve
 {
-	[CustomEditor(typeof(Transform))]
-	public class DissolvedObjectEditor : Editor
+	public class DissolvedObjectEditor
 	{
-		public override void OnInspectorGUI()
+		[MenuItem("Unity Dissolve/Dissolve All Objects on a Scene" )]
+		private static void DissolveAllObjects()
 		{
-			base.OnInspectorGUI();
+			foreach (var component in Resources.FindObjectsOfTypeAll<Component>()) {
+				if (component.GetType().HasAttribute<DissolveInEditorAttribute>()) {
+					component.Dissolve();
+				}
+			}
+		}
 
-			if (GUILayout.Button("Dissolve")) {
+		[MenuItem( "Unity Dissolve/Dissolve selected Object" )]
+		private static void DissolveSelectedObject()
+		{
+			foreach ( var component in Resources.FindObjectsOfTypeAll<Component>() ) {
+				if ( component.GetType().HasAttribute<DissolveInEditorAttribute>() ) {
+					component.Dissolve();
+				}
 			}
 		}
 	}

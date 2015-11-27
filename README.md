@@ -7,136 +7,93 @@ Unity3D Dissolve extension library.
 Usage
 -----
 
-Checkout `git submodule` to your `Unity Project/Libraries` folder. Than make directory links of `Libraries\UnityDissolve\src\*` folders to your `Assets\Scripts\UnityDissolve\*` folder.
+Build library dll files and place them in your `Assets/UnityDissolve` folder. Editor dll files should go to `Assets/UnityDissolve/Editor` forlder
 
 
 Dissolve
 --------
 
 Every object can be decomposed to it's components. Decomposition is the process of extracting objects `Components` and passing them as the parameters to decompose function.
+This library is build to ease `Component` mangament from code.
 
-For example if GameObject `obj` have MeshRenderer, MeshCollider and MyBehaviour components it can be decomposed by calling `Dissolve` function
+Basic Usage
+-----------
+
+Every `Component` can have different other `Component` references. And their values are usually setup from Unity Editor or via some initialization code.
+This library provides mechanism to tag such component references via attributes and automaticaly fill their values.
+
+For example you have some component `ComponentOne` which references other components in an object.
+
+	public class ComponentOne : MonoBehaviour
+	{
+		[SerializeField]
+		ComponentTwo componentTwo;
+
+		[SerializeField]
+		ComponentThree componentThree;
+	}
+
+Values of `componentTwo` and `componentThree` variables can be set in Unity Editor inspector, or via some initialization code, usisally done in `Awake()` function.
+
+	void Awake()
+	{
+		componentTwo = gameObject.GetComponent<ComponentTwo>();
+		componentThree = gameObject.GetComponent<ComponentThree>();
+	}
+
+Using UnityDissolve library one can tag this code with attributes a little to produce the same result.
+
+	[DissolveInEditor]
+	public class ComponentOne : MonoBehaviour
+	{
+		[SerializeField]
+		[Component]
+		ComponentTwo componentTwo;
+
+		[SerializeField]
+		[Component]
+		ComponentThree componentThree;
+	}
+
+After that you can use `Unity Dissolve/Dissolve All Objects on a Scene` menu item to fill all such components in a scene and prefabs.
+
+In more complex situations, when components are rtreived form child or parent objects relative path to an object can be set in `ComponentAttribute`
+
+	[DissolveInEditor]
+	public class ComponentOne : MonoBehaviour
+	{
+		[SerializeField]
+		[Component("Child")]
+		ComponentTwo componentTwo;
+
+		[SerializeField]
+		[Component("..")]
+		ComponentThree componentThree;
+	}
+
+In such object components would be retreived from child GameObject with name `Child` and from parent object referenced by ".." path.
+
+Also this behaviour can be used at runtime
+
+	using UnityDissolve;
+
+	// ...
 	
-	GameObject obj = ...;
-	obj.Dissolve(_.a((MeshRenderer mr, MeshCollider mc, MyBehaviour mb) => {
-		// do something...
-	}));
-
-If GameObject does not have requested Component `null` will be passed as a parameter. Multiple decompose functions can be applied to GameObject - they will be called in order of declaration.
-This behaviour is used in `GameObject.New` funcion.
-
-Another variant of decomposition is decomposition to an object. By calling `Dissolve` with some tagged object as argument it can be decomposed to its `Components` storing each in objects member.
-
-	public class Description : MonoBehaviour
+	void Awake()
 	{
-		[Component("Icon")] SpriteRenderer icon;
-		[Component("Description")] TextMesh description;
-		
-		void Awake()
-		{
-			this.Dissolve(); // this decompose object to itself
-
-			// so
-			// "Icon" child node will be found and icon set to it's PriteRenderer component if it exists.
-			// equivalent to code 
-			// var o = gameObject.Find("Icon");
-			// icon = o != null ? o.GetComponent<SpriteRenderer>();
-		}
-
-		void Start()
-		{
-			description.text = "Item description";
-		}
+		gameObject.Dissolve();
 	}
 
-list of objects can be decomposed also. `Dissolve` handles list creation by itself.
+Or even on arbitrarry classes, by providing the root object.
 
+	using UnityDissolve;
 
-	public class Page : MonoBehaviour
+	// ...
+	
+	void Awake()
 	{
-		[Component("ItemDescriptions")] IList<Description> descriptions;
-		
-		void Awake()
-		{
-			this.Dissolve(); // this decompose object to itself
-
-			// equivalent to code
-			// descriptions = new List<Description>();
-			// foreach (var child in gameObject.Find("ItemDescriptions")) {
-			// 	descriptions.Add(child.GetComponent<Description>());
-			// }
-		}
-
-		void Start()
-		{
-			foreach (var description in descriptions) {
-				description.UpdateDescription();
-			}
-		}
+		SomtType collectComponents = new SomeType();
+		gameObject.Dissolve(collectComponents);
 	}
 
-just not to make many simple MonoBehaviurs for trivial tasks it is possible to decompose GameObjects to standalone classes
-
-	public class Page : MonoBehaviour
-	{
-		// It's ok to make this class public, private, or internal
-		// no struct are allowed here
-		class Portrait
-		{
-			[Component("Icon")] SpriteRenderer icon;			
-		}
-
-		// WARN: this class must have public (or internal) visibility or Mono will fail to decompose it in WebPlayer builds.
-		// beacuse it is used in IList<> component.
-		public class Description
-		{
-			[Component] GameObject gameObject; // Component without "name" will link to object itself.
-			[Component("Icon")] SpriteRenderer icon;
-			[Component("Description")] TextMesh description;
-		}
-
-		[Component("ItemDescriptions")] IList<Description> descriptions;
-		[Component("ItemPortrait")] Portrait portrait;
-		
-		void Awake()
-		{
-			this.Dissolve(); // this decompose object to itself
-		}
-
-		void Start()
-		{
-			foreach (var description in descriptions) {
-				description.UpdateDescription();
-			}
-		}
-	}
-
-also any GameObject can be decomposed to any class or structure
-
-	public class Description
-	{
-		[Component] GameObject gameObject; // Component without "name" will link to object itself.
-		[Component("Icon")] SpriteRenderer icon;
-		[Component("Description")] TextMesh description;
-	}
-
-	var description = new Description();
-	instance.Dissolve(description);
-	// or one in line
-	var description = instance.Dissolve(new Description());
-
-and finally GameObject can be decomposed to a structure of its components with simplified syntax
-
-
-	[Component]
-	public class Description
-	{
-		GameObject gameObject;
-		MeshRenderer renderer;
-		MeshCollider collider;
-	}
-
-	var description = new Description();
-	instance.Dissolve(description);
-	// or one in line
-	var description = instance.Dissolve(new Description());
+`SomeType` members should be tagged with attributes the same whay as described for `MonoBehaviour`
