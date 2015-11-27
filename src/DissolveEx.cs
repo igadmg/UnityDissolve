@@ -9,16 +9,14 @@ namespace UnityDissolve
 {
 	public static class DissolveEx
 	{
-		private static Dictionary<Type, DissolvedType> DissolveTypeCache = new Dictionary<Type, DissolvedType>();
-
 		private static T DissolveImpl<T>(GameObject go, T o)
 		{
 			Transform transform = go.transform;
 
 			DissolvedType dissolvedType;
-			if (!DissolveTypeCache.TryGetValue(o.GetType(), out dissolvedType)) {
+			if (!DissolveTypeCache.TypeCache.TryGetValue( o.GetType(), out dissolvedType)) {
 				dissolvedType = new DissolvedType(o.GetType());
-				DissolveTypeCache.Add(o.GetType(), dissolvedType);
+				DissolveTypeCache.TypeCache.Add(o.GetType(), dissolvedType);
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
