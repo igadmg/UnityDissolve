@@ -22,8 +22,7 @@ namespace UnityDissolve
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process AddComponents first.
 			foreach (var fieldDescription in dissolvedType.AddComponentFields) {
-				FieldInfo field = fieldDescription.Field;
-				fieldDescription.DissolveFn(o, field, go);
+				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, go);
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
@@ -32,7 +31,13 @@ namespace UnityDissolve
 				FieldInfo field = fieldDescription.Field;
 				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name);
 
-				fieldDescription.DissolveFn(o, field, fieldGameObject);
+				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, fieldGameObject);
+			}
+
+			///////////////////////////////////////////////////////////////////////////////////
+			// Process Resource fields.
+			foreach (var fieldDescription in dissolvedType.ResourceFields) {
+				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, go);
 			}
 
 			foreach (var fieldDescription in dissolvedType.SubComponents) {

@@ -14,13 +14,14 @@ namespace UnityDissolve
 	{
 		public string Name;
 		public FieldInfo Field;
-		public Action<object, FieldInfo, GameObject> DissolveFn;
+		public Action<object, string, FieldInfo, GameObject> DissolveFn;
 	}
 
 	internal class DissolvedType
 	{
 		public List<DissolveFieldDescription> AddComponentFields = new List<DissolveFieldDescription>();
 		public List<DissolveFieldDescription> ComponentFields = new List<DissolveFieldDescription>();
+		public List<DissolveFieldDescription> ResourceFields = new List<DissolveFieldDescription>();
 		public List<Tuple<string, FieldInfo>> SubComponents = new List<Tuple<string, FieldInfo>>();
 
 		public DissolvedType(Type type)
@@ -47,6 +48,14 @@ namespace UnityDissolve
 							ComponentAttribute ca = attribute as ComponentAttribute;
 							if (ca != null) {
 								ComponentFields.Add(MakeDissolveFieldDescription(ca.name, field));
+
+								processed = true;
+								continue;
+							}
+
+							ResourceAttribute ra = attribute as ResourceAttribute;
+							if (ra != null) {
+								ResourceFields.Add(MakeResourceDissolveFieldDescription(ra.name, field));
 
 								processed = true;
 								continue;
@@ -88,6 +97,15 @@ namespace UnityDissolve
 							else {
 								SubComponents.Add(Tuple.Create(ca.name, field));
 							}
+
+							continue;
+						}
+
+						ResourceAttribute ra = attribute as ResourceAttribute;
+						if (ra != null) {
+							ResourceFields.Add(MakeResourceDissolveFieldDescription(ra.name, field));
+
+							continue;
 						}
 					}
 				}
@@ -101,13 +119,13 @@ namespace UnityDissolve
 			fd.Field = field;
 
 			if (field.FieldType.IsSubclassOf(typeof(Component))) {
-				fd.DissolveFn = (o, f, go) => {
+				fd.DissolveFn = (o, s, f, go) => {
 					Component c = go.AddComponent(f.FieldType);
 					f.SetValue(o, c);
 				};
 			}
 			else {
-				fd.DissolveFn = (o, f, go) => { Debug.LogWarningFormat("AddComponent: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
+				fd.DissolveFn = (o, s, f, go) => { Debug.LogWarningFormat("AddComponent: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
 			}
 
 			return fd;
@@ -119,13 +137,13 @@ namespace UnityDissolve
 			fd.Name = name;
 			fd.Field = field;
 			if (field.FieldType.IsSubclassOf(typeof(Component))) {
-				fd.DissolveFn = (o, f, go) => { f.SetValue(o, go.GetComponent(f.FieldType)); };
+				fd.DissolveFn = (o, s, f, go) => { f.SetValue(o, go.GetComponent(f.FieldType)); };
 			}
 			else if (field.FieldType == typeof(GameObject)) {
-				fd.DissolveFn = (o, f, go) => { f.SetValue(o, go); };
+				fd.DissolveFn = (o, s, f, go) => { f.SetValue(o, go); };
 			}
 			else if (field.FieldType.IsList()) {
-				fd.DissolveFn = (o, f, go) => {
+				fd.DissolveFn = (o, s, f, go) => {
 					Type nodeType = f.FieldType.GetListItemType();
 					if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
 
@@ -139,9 +157,27 @@ namespace UnityDissolve
 				};
 			}
 			else {
-				fd.DissolveFn = (o, f, go) => { Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
+				fd.DissolveFn = (o, s, f, go) => { Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
 			}
 
+
+			return fd;
+		}
+
+		DissolveFieldDescription MakeResourceDissolveFieldDescription(string name, FieldInfo field)
+		{
+			DissolveFieldDescription fd = new DissolveFieldDescription();
+			fd.Name = name;
+			fd.Field = field;
+
+			if (field.FieldType == typeof(GameObject)) {
+				fd.DissolveFn = (o, s, f, go) => {
+					f.SetValue(o, Resources.Load(s));
+				};
+			}
+			else {
+				fd.DissolveFn = (o, s, f, go) => { Debug.LogWarningFormat("Resource: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
+			}
 
 			return fd;
 		}

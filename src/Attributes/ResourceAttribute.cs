@@ -2,11 +2,11 @@
 
 namespace UnityDissolve
 {
-	class ResourceAttributecs : Attribute
+	public class ResourceAttribute : Attribute
 	{
 		public string name = string.Empty;
 		
-		public ResourceAttributecs(string name)
+		public ResourceAttribute(string name)
 		{
 			this.name = name;
 		}
