@@ -1,17 +1,26 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using SystemEx;
+using UnityEngine;
 
 [assembly: InternalsVisibleToAttribute("UnityDissolve.Test")]
 
 namespace UnityDissolve
 {
+	internal struct DissolveFieldDescription
+	{
+		public string Name;
+		public FieldInfo Field;
+		public Action<object, FieldInfo, GameObject> DissolveFn;
+	}
+
 	internal class DissolvedType
 	{
-		public List<Tuple<string, FieldInfo>> AddComponentFields = new List<Tuple<string, FieldInfo>>();
-		public List<Tuple<string, FieldInfo>> ComponentFields = new List<Tuple<string, FieldInfo>>();
+		public List<DissolveFieldDescription> AddComponentFields = new List<DissolveFieldDescription>();
+		public List<DissolveFieldDescription> ComponentFields = new List<DissolveFieldDescription>();
 		public List<Tuple<string, FieldInfo>> SubComponents = new List<Tuple<string, FieldInfo>>();
 
 		public DissolvedType(Type type)
@@ -29,7 +38,7 @@ namespace UnityDissolve
 						foreach (var attribute in field.GetCustomAttributes(true)) {
 							AddComponentAttribute aca = attribute as AddComponentAttribute;
 							if (aca != null) {
-								AddComponentFields.Add(Tuple.Create(aca.name, field));
+								AddComponentFields.Add(MakeAddComponentDissolveFieldDescription(aca.name, field));
 
 								processed = true;
 								continue;
@@ -37,7 +46,7 @@ namespace UnityDissolve
 
 							ComponentAttribute ca = attribute as ComponentAttribute;
 							if (ca != null) {
-								ComponentFields.Add(Tuple.Create(ca.name, field));
+								ComponentFields.Add(MakeDissolveFieldDescription(ca.name, field));
 
 								processed = true;
 								continue;
@@ -45,7 +54,7 @@ namespace UnityDissolve
 						}
 
 						if (!processed) {
-							ComponentFields.Add(Tuple.Create(string.Empty, field));
+							ComponentFields.Add(MakeDissolveFieldDescription(string.Empty, field));
 						}
 					}
 					else {
@@ -65,7 +74,7 @@ namespace UnityDissolve
 						AddComponentAttribute aca = attribute as AddComponentAttribute;
 						if (aca != null) {
 							if (isUnityObject) {
-								AddComponentFields.Add(Tuple.Create(aca.name, field));
+								AddComponentFields.Add(MakeAddComponentDissolveFieldDescription(aca.name, field));
 							}
 
 							continue;
@@ -74,7 +83,7 @@ namespace UnityDissolve
 						ComponentAttribute ca = attribute as ComponentAttribute;
 						if (ca != null) {
 							if (isUnityObject) {
-								ComponentFields.Add(Tuple.Create(ca.name, field));
+								ComponentFields.Add(MakeDissolveFieldDescription(ca.name, field));
 							}
 							else {
 								SubComponents.Add(Tuple.Create(ca.name, field));
@@ -83,6 +92,58 @@ namespace UnityDissolve
 					}
 				}
 			}
+		}
+
+		DissolveFieldDescription MakeAddComponentDissolveFieldDescription(string name, FieldInfo field)
+		{
+			DissolveFieldDescription fd = new DissolveFieldDescription();
+			fd.Name = name;
+			fd.Field = field;
+
+			if (field.FieldType.IsSubclassOf(typeof(Component))) {
+				fd.DissolveFn = (o, f, go) => {
+					Component c = go.AddComponent(f.FieldType);
+					f.SetValue(o, c);
+				};
+			}
+			else {
+				fd.DissolveFn = (o, f, go) => { Debug.LogWarningFormat("AddComponent: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
+			}
+
+			return fd;
+		}
+
+		DissolveFieldDescription MakeDissolveFieldDescription(string name, FieldInfo field)
+		{
+			DissolveFieldDescription fd = new DissolveFieldDescription();
+			fd.Name = name;
+			fd.Field = field;
+			if (field.FieldType.IsSubclassOf(typeof(Component))) {
+				fd.DissolveFn = (o, f, go) => { f.SetValue(o, go.GetComponent(f.FieldType)); };
+			}
+			else if (field.FieldType == typeof(GameObject)) {
+				fd.DissolveFn = (o, f, go) => { f.SetValue(o, go); };
+			}
+			else if (field.FieldType.IsList()) {
+				fd.DissolveFn = (o, f, go) => {
+					Type nodeType = f.FieldType.GetListItemType();
+					if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
+
+					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
+
+					foreach (Component co in go.GetComponents(f.FieldType)) {
+						list.Add(co);
+					}
+
+					f.SetValue(o, list);
+				};
+			}
+			else {
+				fd.DissolveFn = (o, f, go) => { Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
+			}
+
+
+			return fd;
 		}
 	}
 }

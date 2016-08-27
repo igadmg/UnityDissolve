@@ -22,38 +22,17 @@ namespace UnityDissolve
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process AddComponents first.
 			foreach (var fieldDescription in dissolvedType.AddComponentFields) {
-				string objectPath = fieldDescription.Item1;
-				FieldInfo field = fieldDescription.Item2;
-
-				Component c = go.AddComponent(field.FieldType);
-				field.SetValue(o, c);
+				FieldInfo field = fieldDescription.Field;
+				fieldDescription.DissolveFn(o, field, go);
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process ComponentFields
 			foreach (var fieldDescription in dissolvedType.ComponentFields) {
-				string objectPath = fieldDescription.Item1;
-				FieldInfo field = fieldDescription.Item2;
-				GameObject fieldGameObject = transform.FindGameObject(objectPath);
+				FieldInfo field = fieldDescription.Field;
+				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name);
 
-				if (field.FieldType.IsSubclassOf(typeof(Component))) {
-					field.SetValue(o, fieldGameObject.GetComponent(field.FieldType));
-				}
-				else if (field.FieldType == typeof(GameObject)) {
-					field.SetValue(o, fieldGameObject);
-				}
-				else if (field.FieldType.IsList()) {
-					Type nodeType = field.FieldType.GetListItemType();
-					if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
-
-					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
-
-					foreach (Component co in fieldGameObject.GetComponents(field.FieldType)) {
-						list.Add(co);
-					}
-
-					field.SetValue(o, list);
-				}
+				fieldDescription.DissolveFn(o, field, fieldGameObject);
 			}
 
 			foreach (var fieldDescription in dissolvedType.SubComponents) {
