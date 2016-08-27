@@ -19,8 +19,8 @@ namespace UnityDissolve
 		[MenuItem( "Unity Dissolve/Dissolve selected Object" )]
 		private static void DissolveSelectedObject()
 		{
-			foreach ( var component in Resources.FindObjectsOfTypeAll<Component>() ) {
-				if ( component.GetType().HasAttribute<DissolveInEditorAttribute>() ) {
+			foreach (var component in Selection.activeGameObject.GetComponents<Component>()) {
+				if (component.GetType().HasAttribute<DissolveInEditorAttribute>()) {
 					component.Dissolve();
 				}
 			}

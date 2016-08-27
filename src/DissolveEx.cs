@@ -36,8 +36,11 @@ namespace UnityDissolve
 				FieldInfo field = fieldDescription.Item2;
 				GameObject fieldGameObject = transform.FindGameObject(objectPath);
 
-				if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object))) {
+				if (field.FieldType.IsSubclassOf(typeof(Component))) {
 					field.SetValue(o, fieldGameObject.GetComponent(field.FieldType));
+				}
+				else if (field.FieldType == typeof(GameObject)) {
+					field.SetValue(o, fieldGameObject);
 				}
 				else if (field.FieldType.IsList()) {
 					Type nodeType = field.FieldType.GetListItemType();

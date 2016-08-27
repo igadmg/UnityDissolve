@@ -37,13 +37,14 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="UnityEngine">
-      <HintPath>$(SolutionDir)Libraries\UnityEngine\UnityEngine.dll</HintPath>
+      <HintPath>$(SolutionDir)Libraries\UnityAssemblies\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\Attributes\DissolveInEditorAttribute.cs" />
+    <Compile Include="src\Attributes\ResourceAttributecs.cs" />
     <Compile Include="src\DissolvedType.cs" />
     <Compile Include="src\DissolveEx.cs" />
     <Compile Include="src\Attributes\ComponentAttribute.cs" />
@@ -52,7 +53,7 @@
     <Compile Include="src\TransformEx.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Libraries\SystemEx\SystemEx.csproj">
+    <ProjectReference Include="$(SolutionDir)Libraries\SystemEx\SystemEx.csproj">
       <Project>{0271e27f-e614-4b0f-af16-05d2d2781b7f}</Project>
       <Name>SystemEx</Name>
     </ProjectReference>
