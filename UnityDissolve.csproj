@@ -53,6 +53,7 @@
     <Compile Include="src\Attributes\ComponentAttribute.cs" />
     <Compile Include="src\DissolveTypeCache.cs" />
     <Compile Include="src\GameObjectEx.cs" />
+    <Compile Include="src\SetupEx.cs" />
     <Compile Include="src\TransformEx.cs" />
   </ItemGroup>
   <ItemGroup>
