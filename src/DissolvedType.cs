@@ -77,7 +77,8 @@ namespace UnityDissolve
 			else {
 				foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)) {
 					Type fieldType = field.FieldType;
-					bool isUnityObject = fieldType.IsSubclassOf(typeof(UnityEngine.Object));
+					bool isUnityObject = fieldType.IsSubclassOf(typeof(UnityEngine.Object))
+						|| (fieldType.IsArray && fieldType.GetElementType().IsSubclassOf(typeof(UnityEngine.Object)));
 
 					foreach (var attribute in field.GetCustomAttributes(true)) {
 						AddComponentAttribute aca = attribute as AddComponentAttribute;
@@ -149,11 +150,38 @@ namespace UnityDissolve
 
 					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
 
-					foreach (Component co in go.GetComponents(f.FieldType)) {
-						list.Add(co);
+					if (string.IsNullOrEmpty(s))
+					{
+						foreach (Component co in go.GetComponents(f.FieldType))
+						{
+							list.Add(co);
+						}
+					}
+					else
+					{
+						Component c = o as Component;
+						for (int i = 0; i < c.transform.childCount; i++)
+						{
+							Transform child = c.transform.GetChild(i);
+							if (child.gameObject.name.StartsWith(s))
+							{
+								Component co = child.gameObject.GetComponent(nodeType);
+								if (co != null)
+								{
+									list.Add(co);
+								}
+							}
+						}
 					}
 
-					f.SetValue(o, list);
+					if (f.FieldType.IsArray)
+					{
+						f.SetValue(o, list.GetType().GetMethod("ToArray").Invoke(list, null));
+					}
+					else
+					{
+						f.SetValue(o, list);
+					}
 				};
 			}
 			else {
