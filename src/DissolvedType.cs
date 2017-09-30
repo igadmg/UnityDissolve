@@ -22,7 +22,7 @@ namespace UnityDissolve
 		public List<DissolveFieldDescription> AddComponentFields = new List<DissolveFieldDescription>();
 		public List<DissolveFieldDescription> ComponentFields = new List<DissolveFieldDescription>();
 		public List<DissolveFieldDescription> ResourceFields = new List<DissolveFieldDescription>();
-		public List<Tuple<string, FieldInfo>> SubComponents = new List<Tuple<string, FieldInfo>>();
+		public List<DissolveFieldDescription> SubComponents = new List<DissolveFieldDescription>();
 
 		public DissolvedType(Type type)
 		{
@@ -69,7 +69,7 @@ namespace UnityDissolve
 					else {
 						ComponentAttribute ca = field.GetAttribute<ComponentAttribute>();
 						if (ca != null) {
-							SubComponents.Add(Tuple.Create(ca.name, field));
+							SubComponents.Add(MakeDissolveSubComponentFieldDescription(ca.name, field));
 						}
 					}
 				}
@@ -96,7 +96,7 @@ namespace UnityDissolve
 								ComponentFields.Add(MakeDissolveFieldDescription(ca.name, field));
 							}
 							else {
-								SubComponents.Add(Tuple.Create(ca.name, field));
+								SubComponents.Add(MakeDissolveSubComponentFieldDescription(ca.name, field));
 							}
 
 							continue;
@@ -188,6 +188,60 @@ namespace UnityDissolve
 				fd.DissolveFn = (o, s, f, go) => { Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
 			}
 
+
+			return fd;
+		}
+
+		DissolveFieldDescription MakeDissolveSubComponentFieldDescription(string name, FieldInfo field)
+		{
+			DissolveFieldDescription fd = new DissolveFieldDescription();
+			fd.Name = name;
+			fd.Field = field;
+
+			if (field.FieldType.IsList())
+			{
+				fd.DissolveFn = (o, s, f, go) =>
+				{
+					Type nodeType = f.FieldType.GetListItemType();
+					if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
+
+					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
+
+					if (string.IsNullOrEmpty(s))
+					{
+						Debug.LogErrorFormat("SubComponent field dissolved without child path. Taht is definitely error.");
+					}
+					else
+					{
+						Component c = o as Component;
+						for (int i = 0; i < c.transform.childCount; i++)
+						{
+							Transform child = c.transform.GetChild(i);
+							if (child.gameObject.name.StartsWith(s))
+							{
+								list.Add(child.gameObject.Dissolve(Activator.CreateInstance(nodeType)));
+							}
+						}
+					}
+
+					if (f.FieldType.IsArray)
+					{
+						f.SetValue(o, list.GetType().GetMethod("ToArray").Invoke(list, null));
+					}
+					else
+					{
+						f.SetValue(o, list);
+					}
+				};
+			}
+			else
+			{
+				fd.DissolveFn = (o, s, f, go) =>
+				{
+					object node = Activator.CreateInstance(f.FieldType);
+					f.SetValue(o, go.Dissolve(node));
+				};
+			}
 
 			return fd;
 		}

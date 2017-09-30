@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
 using SystemEx;
 using UnityEngine;
+
+
 
 namespace UnityDissolve
 {
@@ -14,20 +14,23 @@ namespace UnityDissolve
 			Transform transform = go.transform;
 
 			DissolvedType dissolvedType;
-			if (!DissolveTypeCache.TypeCache.TryGetValue( o.GetType(), out dissolvedType)) {
+			if (!DissolveTypeCache.TypeCache.TryGetValue(o.GetType(), out dissolvedType))
+			{
 				dissolvedType = new DissolvedType(o.GetType());
 				DissolveTypeCache.TypeCache.Add(o.GetType(), dissolvedType);
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process AddComponents first.
-			foreach (var fieldDescription in dissolvedType.AddComponentFields) {
+			foreach (var fieldDescription in dissolvedType.AddComponentFields)
+			{
 				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, go);
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process ComponentFields
-			foreach (var fieldDescription in dissolvedType.ComponentFields) {
+			foreach (var fieldDescription in dissolvedType.ComponentFields)
+			{
 				FieldInfo field = fieldDescription.Field;
 				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name);
 
@@ -36,17 +39,25 @@ namespace UnityDissolve
 
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process Resource fields.
-			foreach (var fieldDescription in dissolvedType.ResourceFields) {
+			foreach (var fieldDescription in dissolvedType.ResourceFields)
+			{
 				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, go);
 			}
 
-			foreach (var fieldDescription in dissolvedType.SubComponents) {
+			foreach (var fieldDescription in dissolvedType.SubComponents)
+			{
+				FieldInfo field = fieldDescription.Field;
+				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name);
+
+				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, fieldGameObject);
+				/*
 				string objectPath = fieldDescription.Item1;
 				FieldInfo field = fieldDescription.Item2;
 				GameObject fieldGameObject = transform.FindGameObject(objectPath);
 
 				object node = Activator.CreateInstance(field.FieldType);
 				field.SetValue(o, fieldGameObject.Dissolve(node));
+				*/
 			}
 
 			return o;
