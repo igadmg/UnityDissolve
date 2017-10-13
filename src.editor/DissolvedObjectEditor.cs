@@ -21,6 +21,9 @@ namespace UnityDissolve
 		[MenuItem("GameObject/Dissolve", true)]
 		static bool ValidateDissolve()
 		{
+			if (Selection.activeGameObject == null)
+				return false;
+
 			foreach (var component in Selection.activeGameObject.GetComponents<Component>())
 			{
 				if (component.GetType().HasAttribute<DissolveInEditorAttribute>())

@@ -5,6 +5,11 @@ namespace UnityDissolve
 {
 	public static class GameObjectEx
 	{
+		public static T GetComponentOrThis<T>(this GameObject o)
+		{
+			return (T)o.GetComponentOrThis(typeof(T));
+		}
+
 		public static object GetComponentOrThis(this GameObject o, Type type)
 		{
 			if (type != typeof(GameObject))
