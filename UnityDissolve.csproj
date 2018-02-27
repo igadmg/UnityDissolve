@@ -48,6 +48,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\Attributes\DissolveInEditorAttribute.cs" />
     <Compile Include="src\Attributes\ResourceAttribute.cs" />
+    <Compile Include="src\DissolvedMonoBehaviour.cs" />
     <Compile Include="src\DissolvedType.cs" />
     <Compile Include="src\DissolveEx.cs" />
     <Compile Include="src\Attributes\ComponentAttribute.cs" />
