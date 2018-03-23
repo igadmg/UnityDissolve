@@ -5,7 +5,7 @@ namespace UnityDissolve
 	public class ComponentAttribute : Attribute
 	{
 		public string name = string.Empty;
-		
+
 		public ComponentAttribute()
 		{
 		}
