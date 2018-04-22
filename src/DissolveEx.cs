@@ -34,7 +34,14 @@ namespace UnityDissolve
 				FieldInfo field = fieldDescription.Field;
 				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name);
 
-				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, fieldGameObject);
+				if (fieldGameObject != null)
+				{
+					fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, fieldGameObject);
+				}
+				else
+				{
+					Debug.LogFormat("Component {0} not found.", fieldDescription.Name);
+				}
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
