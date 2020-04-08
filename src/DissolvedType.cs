@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using SystemEx;
 using UnityEngine;
 
-[assembly: InternalsVisibleToAttribute("UnityDissolve.Test")]
+//[assembly: InternalsVisibleToAttribute("UnityDissolve.Test")]
 
 namespace UnityDissolve
 {
