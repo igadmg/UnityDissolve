@@ -27,6 +27,12 @@ namespace UnityDissolve
 
 		public static GameObject FindGameObject(this Transform transform, string name)
 		{
+			if (transform == null)
+				return GameObject.Find(name);
+
+			if (name.StartsWith(".."))
+				return transform.parent.FindGameObject(name.Substring(3));
+
 			var t = !string.IsNullOrEmpty(name) ? transform.Find(name) : transform;
 
 			if (t != null)

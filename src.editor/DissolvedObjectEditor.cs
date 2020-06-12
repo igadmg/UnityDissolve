@@ -58,5 +58,18 @@ namespace UnityDissolve
 				}
 			}
 		}
+
+		[MenuItem("CONTEXT/Component/Dissolve")]
+		static void Dissolve(MenuCommand command)
+		{
+			var component = command.context as Component;
+
+			if (component == null)
+				return;
+
+			component.Dissolve();
+
+			EditorUtility.SetDirty(component);
+		}
 	}
 }

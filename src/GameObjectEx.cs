@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
+
 namespace UnityDissolve
 {
 	public static class GameObjectEx
@@ -29,6 +30,5 @@ namespace UnityDissolve
 			else
 				return o;
 		}
-
 	}
 }

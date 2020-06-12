@@ -1,0 +1,18 @@
+{
+    "name": "UnityDissolve.Editor",
+    "references": [
+        "GUID:f16ba28a75134e84fa35ff2aa3c3b7d5",
+        "GUID:eed249a48ac3ddd47bc9604fde4906cb"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

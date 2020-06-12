@@ -202,7 +202,8 @@ namespace UnityDissolve
 			{
 				fd.DissolveFn = (o, s, f, go) =>
 				{
-					Type nodeType = f.FieldType.GetListItemType();
+ 					Type nodeType = f.FieldType.GetListItemType();
+					bool isComponent = nodeType.IsSubclassOf<Component>();
 					if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
 
 					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
@@ -213,11 +214,16 @@ namespace UnityDissolve
 					}
 					else
 					{
-						Component c = o as Component;
-						for (int i = 0; i < c.transform.childCount; i++)
+						for (int i = 0; i < go.transform.childCount; i++)
 						{
-							Transform child = c.transform.GetChild(i);
-							if (child.gameObject.name.StartsWith(s))
+							Transform child = go.transform.GetChild(i);
+							if (isComponent)
+							{
+								var childComponent = child.GetComponent(nodeType);
+								if (childComponent != null)
+									list.Add(childComponent);
+							}
+							else
 							{
 								list.Add(child.gameObject.Dissolve(Activator.CreateInstance(nodeType)));
 							}

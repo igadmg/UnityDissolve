@@ -106,6 +106,11 @@ namespace UnityDissolve
 			return DissolveImpl(c.gameObject, c);
 		}
 
+		public static T Dissolve<T>(this Component c) where T : new()
+		{
+			return DissolveImpl(c.gameObject, new T());
+		}
+
 		public static T Dissolve<T, U>(this T c, Action<U> i) where T : Component
 		{
 			c.gameObject.Dissolve(i);
