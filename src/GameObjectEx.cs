@@ -21,7 +21,8 @@ namespace UnityDissolve
 
 		public static object GetComponentOrAdd(this GameObject o, Type type)
 		{
-			if (type != typeof(GameObject)) {
+			if (type != typeof(GameObject))
+			{
 				var c = o.GetComponent(type);
 				if (c == null)
 					c = o.AddComponent(type);

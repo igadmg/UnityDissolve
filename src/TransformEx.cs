@@ -57,7 +57,8 @@ namespace UnityDissolve
 
 		public static IEnumerable<Transform> Find(this Transform transform, Func<Transform, bool> f)
 		{
-			foreach (Transform child in transform) {
+			foreach (Transform child in transform)
+			{
 				if (f(child))
 					yield return child;
 			}
