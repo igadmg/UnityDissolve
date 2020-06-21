@@ -40,7 +40,7 @@ namespace UnityDissolve
 				}
 				else
 				{
-					Debug.LogFormat("Component {0} not found.", fieldDescription.Name);
+					Debug.LogWarning($"Component '{fieldDescription.Name}' not found.");
 				}
 			}
 
@@ -56,7 +56,15 @@ namespace UnityDissolve
 				FieldInfo field = fieldDescription.Field;
 				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name);
 
-				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, fieldGameObject);
+				if (fieldGameObject != null)
+				{
+					fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, fieldGameObject);
+				}
+				else
+				{
+					Debug.LogWarning($"Component '{fieldDescription.Name}' not found.");
+				}
+
 				/*
 				string objectPath = fieldDescription.Item1;
 				FieldInfo field = fieldDescription.Item2;

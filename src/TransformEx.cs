@@ -30,7 +30,10 @@ namespace UnityDissolve
 			if (transform == null)
 				return GameObject.Find("/" + name);
 
-			if (name.StartsWith(".."))
+			if (name.StartsWith("/"))
+				return GameObject.Find(name);
+
+			if (name.StartsWith("../"))
 				return FindGameObject(transform.parent, name.Substring(3));
 
 			var t = !string.IsNullOrEmpty(name) ? transform.Find(name) : transform;
