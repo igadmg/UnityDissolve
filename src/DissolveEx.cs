@@ -17,7 +17,8 @@ namespace UnityDissolve
 			if (!DissolveTypeCache.TypeCache.TryGetValue(o.GetType(), out dissolvedType))
 			{
 				dissolvedType = new DissolvedType(o.GetType());
-				DissolveTypeCache.TypeCache.Add(o.GetType(), dissolvedType);
+				//DissolveTypeCache.TypeCache.Add(o.GetType(), dissolvedType);
+				DissolveTypeCache.TypeCache[o.GetType()] = dissolvedType;
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
@@ -110,9 +111,7 @@ namespace UnityDissolve
 		}
 
 		public static T Dissolve<T>(this T c) where T : Component
-		{
-			return DissolveImpl(c.gameObject, c);
-		}
+			=> DissolveImpl(c.gameObject, c);
 
 		public static T Dissolve<T>(this Component c) where T : new()
 		{

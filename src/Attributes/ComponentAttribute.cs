@@ -2,7 +2,11 @@ using System;
 
 namespace UnityDissolve
 {
-	public class ComponentAttribute : Attribute
+	public class DissolveAttribute : Attribute
+	{
+	}
+
+	public class ComponentAttribute : DissolveAttribute
 	{
 		public string name = string.Empty;
 
@@ -16,7 +20,7 @@ namespace UnityDissolve
 		}
 	}
 
-	public class AddComponentAttribute : Attribute
+	public class AddComponentAttribute : DissolveAttribute
 	{
 		public string name = string.Empty;
 

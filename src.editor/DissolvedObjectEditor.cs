@@ -59,6 +59,12 @@ namespace UnityDissolve
 			}
 		}
 
+		[MenuItem("Dissolve/Clear Dissolve TypeCahce")]
+		private static void ClearDissolveTypeCache()
+		{
+			DissolveTypeCache.Clear();
+		}
+
 		[MenuItem("CONTEXT/Component/Dissolve")]
 		static void Dissolve(MenuCommand command)
 		{

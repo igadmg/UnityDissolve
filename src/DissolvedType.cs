@@ -25,107 +25,49 @@ namespace UnityDissolve
 
 		public DissolvedType(Type type)
 		{
-			if (type.HasAttribute<ComponentAttribute>())
+			foreach (var f in type.EnumDissolveFields())
 			{
-				foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+				Type fieldType = f.field.FieldType;
+				if (fieldType.Namespace == "UniRx") // HACK to add support of reactive properties.
+					fieldType = fieldType.GenericTypeArguments[0];
+				bool fieldIsList = fieldType.IsList();
+				Type fieldListItemType = fieldIsList ? fieldType.GetListItemType() : null;
+				bool isUnityObject = fieldType.IsSubclassOf(typeof(UnityEngine.Object))
+						|| (fieldIsList && fieldListItemType.IsSubclassOf(typeof(UnityEngine.Object)));
+
+				if (isUnityObject)
 				{
-					Type fieldType = field.FieldType;
-					bool fieldIsList = fieldType.IsList();
-					Type fieldListItemType = fieldIsList ? fieldType.GetListItemType() : null;
+					bool processed = true;
 
-					if (fieldType.IsSubclassOf(typeof(UnityEngine.Object))
-						|| (fieldIsList && fieldListItemType.IsSubclassOf(typeof(UnityEngine.Object))))
+					foreach (var attribute in f.attributes)
 					{
-						bool processed = false;
-
-						foreach (var attribute in field.GetCustomAttributes(true))
+						switch (attribute)
 						{
-							AddComponentAttribute aca = attribute as AddComponentAttribute;
-							if (aca != null)
-							{
-								AddComponentFields.Add(MakeAddComponentDissolveFieldDescription(aca.name, field));
-
-								processed = true;
+							case AddComponentAttribute aca:
+								AddComponentFields.Add(MakeAddComponentDissolveFieldDescription(aca.name, f.field));
 								continue;
-							}
-
-							ComponentAttribute ca = attribute as ComponentAttribute;
-							if (ca != null)
-							{
-								ComponentFields.Add(MakeDissolveFieldDescription(ca.name, field));
-
-								processed = true;
+							case ComponentAttribute ca:
+								ComponentFields.Add(MakeDissolveFieldDescription(ca.name, f.field));
 								continue;
-							}
-
-							ResourceAttribute ra = attribute as ResourceAttribute;
-							if (ra != null)
-							{
-								ResourceFields.Add(MakeResourceDissolveFieldDescription(ra.name, field));
-
-								processed = true;
+							case ResourceAttribute ra:
+								ResourceFields.Add(MakeResourceDissolveFieldDescription(ra.name, f.field));
 								continue;
-							}
 						}
 
-						if (!processed)
-						{
-							ComponentFields.Add(MakeDissolveFieldDescription(string.Empty, field));
-						}
+						processed = false;
 					}
-					else
+
+					if (!processed)
 					{
-						ComponentAttribute ca = field.GetAttribute<ComponentAttribute>();
-						if (ca != null)
-						{
-							SubComponents.Add(MakeDissolveSubComponentFieldDescription(ca.name, field));
-						}
+						ComponentFields.Add(MakeDissolveFieldDescription(string.Empty, f.field));
 					}
 				}
-			}
-			else
-			{
-				foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+				else
 				{
-					Type fieldType = field.FieldType;
-					bool isUnityObject = fieldType.IsSubclassOf(typeof(UnityEngine.Object))
-						|| (fieldType.IsArray && fieldType.GetElementType().IsSubclassOf(typeof(UnityEngine.Object)));
-
-					foreach (var attribute in field.GetCustomAttributes(true))
+					ComponentAttribute ca = f.field.GetAttribute<ComponentAttribute>();
+					if (ca != null)
 					{
-						AddComponentAttribute aca = attribute as AddComponentAttribute;
-						if (aca != null)
-						{
-							if (isUnityObject)
-							{
-								AddComponentFields.Add(MakeAddComponentDissolveFieldDescription(aca.name, field));
-							}
-
-							continue;
-						}
-
-						ComponentAttribute ca = attribute as ComponentAttribute;
-						if (ca != null)
-						{
-							if (isUnityObject)
-							{
-								ComponentFields.Add(MakeDissolveFieldDescription(ca.name, field));
-							}
-							else
-							{
-								SubComponents.Add(MakeDissolveSubComponentFieldDescription(ca.name, field));
-							}
-
-							continue;
-						}
-
-						ResourceAttribute ra = attribute as ResourceAttribute;
-						if (ra != null)
-						{
-							ResourceFields.Add(MakeResourceDissolveFieldDescription(ra.name, field));
-
-							continue;
-						}
+						SubComponents.Add(MakeDissolveSubComponentFieldDescription(ca.name, f.field));
 					}
 				}
 			}
@@ -157,15 +99,15 @@ namespace UnityDissolve
 			DissolveFieldDescription fd = new DissolveFieldDescription();
 			fd.Name = name;
 			fd.Field = field;
-			if (field.FieldType.IsSubclassOf(typeof(Component)))
+			if (fd.Field.FieldType.IsSubclassOf(typeof(Component)))
 			{
 				fd.DissolveFn = (o, s, f, go) => { f.SetValue(o, go.GetComponent(f.FieldType)); };
 			}
-			else if (field.FieldType == typeof(GameObject))
+			else if (fd.Field.FieldType == typeof(GameObject))
 			{
 				fd.DissolveFn = (o, s, f, go) => { f.SetValue(o, go); };
 			}
-			else if (field.FieldType.IsList())
+			else if (fd.Field.FieldType.IsList())
 			{
 				fd.DissolveFn = (o, s, f, go) => {
 					Type nodeType = f.FieldType.GetListItemType();
@@ -209,7 +151,20 @@ namespace UnityDissolve
 			}
 			else
 			{
-				fd.DissolveFn = (o, s, f, go) => { Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name); };
+				if (fd.Field.FieldType.Namespace == "UniRx") // HACK to add support of reactive properties.
+				{
+					var dfd = MakeDissolveFieldDescription(name, fd.Field.FieldType.GetField("value", BindingFlags.Instance | BindingFlags.NonPublic));
+					fd.DissolveFn = (o, s, f, go) => {
+						Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name);
+						dfd.DissolveFn(f.GetValue(o), s, dfd.Field, go);
+					};
+				}
+				else
+				{
+					fd.DissolveFn = (o, s, f, go) => {
+						Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name);
+					};
+				}
 			}
 
 
