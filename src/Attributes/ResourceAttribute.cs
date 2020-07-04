@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace UnityDissolve
+﻿namespace UnityDissolve
 {
 	public class ResourceAttribute : DissolveAttribute
 	{
