@@ -1,4 +1,5 @@
-﻿using SystemEx;
+﻿using System.Linq;
+using SystemEx;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,12 +10,10 @@ namespace UnityDissolve
 		[MenuItem("GameObject/Dissolve", false, -100)]
 		static void Dissolve()
 		{
-			foreach (var component in Selection.activeGameObject.GetComponents<Component>())
+			foreach (var component in Selection.activeGameObject.GetComponents<Component>()
+				.WhereIsTypeDissolvable())
 			{
-				if (component.GetType().HasAttribute<DissolveInEditorAttribute>())
-				{
-					component.Dissolve();
-				}
+				component.Dissolve();
 			}
 		}
 
@@ -24,38 +23,27 @@ namespace UnityDissolve
 			if (Selection.activeGameObject == null)
 				return false;
 
-			foreach (var component in Selection.activeGameObject.GetComponents<Component>())
-			{
-				if (component.GetType().HasAttribute<DissolveInEditorAttribute>())
-				{
-					return true;
-				}
-			}
-
-			return false;
+			return Selection.activeGameObject.GetComponents<Component>()
+				.WhereIsTypeDissolvable().Any();
 		}
 
 		[MenuItem("Dissolve/Dissolve All Objects on the Scene")]
 		private static void DissolveAllObjects()
 		{
-			foreach (var component in Resources.FindObjectsOfTypeAll<Component>())
+			foreach (var component in Resources.FindObjectsOfTypeAll<Component>()
+				.WhereIsTypeDissolvable())
 			{
-				if (component.GetType().HasAttribute<DissolveInEditorAttribute>())
-				{
-					component.Dissolve();
-				}
+				component.Dissolve();
 			}
 		}
 
 		[MenuItem("Dissolve/Dissolve Selected Object")]
 		private static void DissolveSelectedObject()
 		{
-			foreach (var component in Selection.activeGameObject.GetComponents<Component>())
+			foreach (var component in Selection.activeGameObject.GetComponents<Component>()
+				.WhereIsTypeDissolvable())
 			{
-				if (component.GetType().HasAttribute<DissolveInEditorAttribute>())
-				{
-					component.Dissolve();
-				}
+				component.Dissolve();
 			}
 		}
 
