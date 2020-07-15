@@ -9,9 +9,16 @@ namespace UnityDissolve
 {
 	public class DissolvedMonoBehaviour : MonoBehaviour
 	{
-		protected virtual void OnEnable()
+		protected virtual void Awake()
 		{
 			this.Dissolve();
+		}
+
+		protected virtual void OnEnable()
+		{
+#if UNITY_EDITOR
+			this.Dissolve();
+#endif
 		}
 	}
 
