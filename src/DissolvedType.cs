@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using SystemEx;
 using UnityEngine;
@@ -101,11 +102,33 @@ namespace UnityDissolve
 			fd.Field = field;
 			if (fd.Field.FieldType.IsSubclassOf(typeof(Component)))
 			{
-				fd.DissolveFn = (o, s, f, go) => { f.SetValue(o, go.GetComponent(f.FieldType)); };
+				fd.DissolveFn = (o, s, f, go) => {
+					GameObject fieldGameObject = go.transform.FindGameObject(s).FirstOrDefault();
+
+					if (fieldGameObject != null)
+					{
+						f.SetValue(o, fieldGameObject.GetComponent(f.FieldType));
+					}
+					else
+					{
+						Debug.LogWarning($"Component '{s}' not found.");
+					}
+				};
 			}
 			else if (fd.Field.FieldType == typeof(GameObject))
 			{
-				fd.DissolveFn = (o, s, f, go) => { f.SetValue(o, go); };
+				fd.DissolveFn = (o, s, f, go) => {
+					GameObject fieldGameObject = go.transform.FindGameObject(s).FirstOrDefault();
+
+					if (fieldGameObject != null)
+					{
+						f.SetValue(o, fieldGameObject);
+					}
+					else
+					{
+						Debug.LogWarning($"Component '{s}' not found.");
+					}
+				};
 			}
 			else if (fd.Field.FieldType.IsList())
 			{
@@ -115,7 +138,7 @@ namespace UnityDissolve
 
 					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
 
-					if (string.IsNullOrEmpty(s))
+					if (s.null_ws_())
 					{
 						foreach (Component co in go.GetComponents(f.FieldType))
 						{
@@ -124,17 +147,14 @@ namespace UnityDissolve
 					}
 					else
 					{
-						Component c = o as Component;
-						for (int i = 0; i < c.transform.childCount; i++)
+						var fieldGameObjects = go.transform.FindGameObject(s);
+
+						foreach (var fgo in fieldGameObjects)
 						{
-							Transform child = c.transform.GetChild(i);
-							if (child.gameObject.name.StartsWith(s))
+							Component co = fgo.GetComponent(nodeType);
+							if (co != null)
 							{
-								Component co = child.gameObject.GetComponent(nodeType);
-								if (co != null)
-								{
-									list.Add(co);
-								}
+								list.Add(co);
 							}
 						}
 					}

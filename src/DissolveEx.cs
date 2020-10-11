@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using SystemEx;
 using UnityEngine;
@@ -33,16 +34,7 @@ namespace UnityDissolve
 			foreach (var fieldDescription in dissolvedType.ComponentFields)
 			{
 				FieldInfo field = fieldDescription.Field;
-				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name);
-
-				if (fieldGameObject != null)
-				{
-					fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, fieldGameObject);
-				}
-				else
-				{
-					Debug.LogWarning($"Component '{fieldDescription.Name}' not found.");
-				}
+				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, go);
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
@@ -55,7 +47,7 @@ namespace UnityDissolve
 			foreach (var fieldDescription in dissolvedType.SubComponents)
 			{
 				FieldInfo field = fieldDescription.Field;
-				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name);
+				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name).FirstOrDefault();
 
 				if (fieldGameObject != null)
 				{

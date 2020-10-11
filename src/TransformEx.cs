@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SystemEx;
 using UnityEngine;
 
 namespace UnityDissolve
@@ -25,25 +26,62 @@ namespace UnityDissolve
 			return null;
 		}
 
-		public static GameObject FindGameObject(this Transform transform, string name)
+		public static IEnumerable<GameObject> FindGameObject(this Transform transform, string name)
+			=> transform.FindGameObject(name.ToPath());
+
+		public static IEnumerable<GameObject> FindGameObject(this Transform transform, string[] path)
 		{
-			if (transform == null)
-				return GameObject.Find("/" + name);
+			GameObject root = transform.Elvis(t => t.gameObject);
 
-			if (name.StartsWith("/"))
-				return GameObject.Find(name);
+			if (path.IsEmptyPath())
+			{
+				yield return root;
+				yield break;
+			}
 
-			if (name.StartsWith("../"))
-				return FindGameObject(transform.parent, name.Substring(3));
+			foreach (var pathi in path)
+			{
+				if (pathi == "..")
+				{
+					if (root == null)
+						yield break;
 
-			var t = !string.IsNullOrEmpty(name) ? transform.Find(name) : transform;
+					root = root.transform.parent.Elvis(t => t.gameObject);
+					continue;
+				}
 
-			if (t != null)
-				return t.gameObject;
+				if (pathi.null_ws_())
+				{
+					root = null;
+					continue;
+				}
 
-			Debug.LogWarning(string.Format("No child GameObject '{0}' found.", name));
+				if (pathi == "*")
+				{
+					foreach (Transform t in root.transform)
+					{
+						yield return t.gameObject;
+					}
+					yield break;
+				}
 
-			return null;
+				if (root == null)
+				{
+					root = GameObject.Find("/" + pathi);
+				}
+				else
+				{
+					root = root.transform.Find(pathi).Elvis(t => t.gameObject);
+				}
+
+				if (root == null)
+					yield break;
+			}
+
+			if (root != null)
+				yield return root;
+
+			Debug.LogWarning(string.Format("No child GameObject '{0}' found.", path.FromPath()));
 		}
 
 		public static object Find(this Transform transform, string name, Type type)
