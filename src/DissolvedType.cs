@@ -111,7 +111,7 @@ namespace UnityDissolve
 					}
 					else
 					{
-						Debug.LogWarning($"Component '{s}' not found.");
+						Debug.LogWarning($"'{go.name}': Component '{s}' not found.");
 					}
 				};
 			}
@@ -201,7 +201,7 @@ namespace UnityDissolve
 			{
 				fd.DissolveFn = (o, s, f, go) => {
 					Type nodeType = f.FieldType.GetListItemType();
-					bool isComponent = nodeType.IsSubclassOf<Component>();
+					bool isComponent = nodeType.IsA<Component>();
 					if (!nodeType.IsVisible) Debug.LogError(nodeType.FullName + " should be declared public or it will break Mono builds.");
 
 					IList list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(nodeType));
