@@ -16,10 +16,14 @@ namespace UnityDissolve
 
 		protected virtual void OnEnable()
 		{
-#if UNITY_EDITOR
-			this.Dissolve();
-#endif
 		}
+
+#if UNITY_EDITOR
+		protected virtual void OnValidate()
+		{
+			this.Dissolve();
+		}
+#endif
 	}
 
 	public static class DissolvedMonoBehaviourEx
