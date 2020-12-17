@@ -41,6 +41,11 @@ namespace UnityDissolve
 
 			foreach (var pathi in path)
 			{
+				if (pathi == ".")
+				{
+					continue;
+				}
+
 				if (pathi == "..")
 				{
 					if (root == null)

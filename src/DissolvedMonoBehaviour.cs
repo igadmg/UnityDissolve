@@ -14,10 +14,6 @@ namespace UnityDissolve
 			this.Dissolve();
 		}
 
-		protected virtual void OnEnable()
-		{
-		}
-
 #if UNITY_EDITOR
 		protected virtual void OnValidate()
 		{
