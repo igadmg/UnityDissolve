@@ -15,7 +15,7 @@ namespace UnityDissolve
 		}
 
 #if UNITY_EDITOR
-		protected virtual void OnValidate()
+		public virtual void OnValidate()
 		{
 			this.Dissolve();
 		}

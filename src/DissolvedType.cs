@@ -32,11 +32,12 @@ namespace UnityDissolve
 				if (fieldType.Namespace == "UniRx") // HACK to add support of reactive properties.
 					fieldType = fieldType.GenericTypeArguments[0];
 				bool fieldIsList = fieldType.IsList();
+				bool fieldIsInterface = fieldType.IsInterface;
 				Type fieldListItemType = fieldIsList ? fieldType.GetListItemType() : null;
 				bool isUnityObject = fieldType.IsSubclassOf(typeof(UnityEngine.Object))
 						|| (fieldIsList && fieldListItemType.IsSubclassOf(typeof(UnityEngine.Object)));
 
-				if (isUnityObject)
+				if (isUnityObject || fieldIsInterface)
 				{
 					bool processed = true;
 
@@ -45,13 +46,13 @@ namespace UnityDissolve
 						switch (attribute)
 						{
 							case AddComponentAttribute aca:
-								AddComponentFields.Add(MakeAddComponentDissolveFieldDescription(aca.name, f.field));
+								if (isUnityObject) AddComponentFields.Add(MakeAddComponentDissolveFieldDescription(aca.name, f.field));
 								continue;
 							case ComponentAttribute ca:
 								ComponentFields.Add(MakeDissolveFieldDescription(ca.name, f.field));
 								continue;
 							case ResourceAttribute ra:
-								ResourceFields.Add(MakeResourceDissolveFieldDescription(ra.name, f.field));
+								if (isUnityObject) ResourceFields.Add(MakeResourceDissolveFieldDescription(ra.name, f.field));
 								continue;
 						}
 
@@ -100,7 +101,7 @@ namespace UnityDissolve
 			DissolveFieldDescription fd = new DissolveFieldDescription();
 			fd.Name = name;
 			fd.Field = field;
-			if (fd.Field.FieldType.IsSubclassOf(typeof(Component)))
+			if (fd.Field.FieldType.IsSubclassOf(typeof(Component)) || fd.Field.FieldType.IsInterface)
 			{
 				fd.DissolveFn = (o, s, f, go) => {
 					GameObject fieldGameObject = go.transform.FindGameObject(s).FirstOrDefault();
@@ -169,22 +170,19 @@ namespace UnityDissolve
 					}
 				};
 			}
+			else if (fd.Field.FieldType.Namespace == "UniRx") // HACK to add support of reactive properties.
+			{
+				var dfd = MakeDissolveFieldDescription(name, fd.Field.FieldType.GetField("value", BindingFlags.Instance | BindingFlags.NonPublic));
+				fd.DissolveFn = (o, s, f, go) => {
+					Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name);
+					dfd.DissolveFn(f.GetValue(o), s, dfd.Field, go);
+				};
+			}
 			else
 			{
-				if (fd.Field.FieldType.Namespace == "UniRx") // HACK to add support of reactive properties.
-				{
-					var dfd = MakeDissolveFieldDescription(name, fd.Field.FieldType.GetField("value", BindingFlags.Instance | BindingFlags.NonPublic));
-					fd.DissolveFn = (o, s, f, go) => {
-						Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name);
-						dfd.DissolveFn(f.GetValue(o), s, dfd.Field, go);
-					};
-				}
-				else
-				{
-					fd.DissolveFn = (o, s, f, go) => {
-						Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name);
-					};
-				}
+				fd.DissolveFn = (o, s, f, go) => {
+					Debug.LogWarningFormat("Component: DissolveFn is not defined for field {0} type {1}", f.Name, f.FieldType.Name);
+				};
 			}
 
 

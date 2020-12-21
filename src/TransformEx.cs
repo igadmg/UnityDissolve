@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using SystemEx;
 using UnityEngine;
 
@@ -66,6 +67,18 @@ namespace UnityDissolve
 					foreach (Transform t in root.transform)
 					{
 						yield return t.gameObject;
+					}
+					yield break;
+				}
+
+				var rePathi = pathi.Replace("*", "*?");
+				if (rePathi.Length > pathi.Length)
+				{
+					var re = new Regex(rePathi);
+					foreach (Transform t in root.transform)
+					{
+						if (re.Match(t.gameObject.name).Success)
+							yield return t.gameObject;
 					}
 					yield break;
 				}
