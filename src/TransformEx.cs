@@ -56,7 +56,7 @@ namespace UnityDissolve
 					continue;
 				}
 
-				if (pathi.null_ws_())
+				if (pathi.IsNullOrWhiteSpace())
 				{
 					root = null;
 					continue;
