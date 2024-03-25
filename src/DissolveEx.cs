@@ -6,17 +6,13 @@ using UnityEngine;
 
 
 
-namespace UnityDissolve
-{
-	public static class DissolveEx
-	{
-		private static T DissolveImpl<T>(GameObject go, T o)
-		{
+namespace UnityDissolve {
+	public static class DissolveEx {
+		private static T DissolveImpl<T>(GameObject go, T o) {
 			Transform transform = go.transform;
 
 			DissolvedType dissolvedType;
-			if (!DissolveTypeCache.TypeCache.TryGetValue(o.GetType(), out dissolvedType))
-			{
+			if (!DissolveTypeCache.TypeCache.TryGetValue(o.GetType(), out dissolvedType)) {
 				dissolvedType = new DissolvedType(o.GetType());
 				//DissolveTypeCache.TypeCache.Add(o.GetType(), dissolvedType);
 				DissolveTypeCache.TypeCache[o.GetType()] = dissolvedType;
@@ -24,37 +20,31 @@ namespace UnityDissolve
 
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process AddComponents first.
-			foreach (var fieldDescription in dissolvedType.AddComponentFields)
-			{
+			foreach (var fieldDescription in dissolvedType.AddComponentFields) {
 				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, go);
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process ComponentFields
-			foreach (var fieldDescription in dissolvedType.ComponentFields)
-			{
+			foreach (var fieldDescription in dissolvedType.ComponentFields) {
 				FieldInfo field = fieldDescription.Field;
 				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, go);
 			}
 
 			///////////////////////////////////////////////////////////////////////////////////
 			// Process Resource fields.
-			foreach (var fieldDescription in dissolvedType.ResourceFields)
-			{
+			foreach (var fieldDescription in dissolvedType.ResourceFields) {
 				fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, go);
 			}
 
-			foreach (var fieldDescription in dissolvedType.SubComponents)
-			{
+			foreach (var fieldDescription in dissolvedType.SubComponents) {
 				FieldInfo field = fieldDescription.Field;
 				GameObject fieldGameObject = transform.FindGameObject(fieldDescription.Name).FirstOrDefault();
 
-				if (fieldGameObject != null)
-				{
+				if (fieldGameObject != null) {
 					fieldDescription.DissolveFn(o, fieldDescription.Name, fieldDescription.Field, fieldGameObject);
 				}
-				else
-				{
+				else {
 					Debug.LogWarning($"Component '{fieldDescription.Name}' not found.");
 				}
 
@@ -71,14 +61,12 @@ namespace UnityDissolve
 			return o;
 		}
 
-		public static GameObject Dissolve<T>(this GameObject o, Action<T> i)
-		{
+		public static GameObject Dissolve<T>(this GameObject o, Action<T> i) {
 			i((T)o.GetComponentOrThis(typeof(T)));
 			return o;
 		}
 
-		public static GameObject Dissolve(this GameObject o, ActionContainer i)
-		{
+		public static GameObject Dissolve(this GameObject o, ActionContainer i) {
 			var prms = new object[i.args.Length];
 
 			for (int ai = 0; ai < i.args.Length; ai++)
@@ -89,41 +77,35 @@ namespace UnityDissolve
 			return o;
 		}
 
-		public static GameObject Dissolve(this GameObject o, params ActionContainer[] i)
-		{
+		public static GameObject Dissolve(this GameObject o, params ActionContainer[] i) {
 			for (int ii = 0; ii < i.Length; ii++)
 				o.Dissolve(i[ii]);
 
 			return o;
 		}
 
-		public static T Dissolve<T>(this GameObject go, T o)
-		{
+		public static T Dissolve<T>(this GameObject go, T o) {
 			return DissolveImpl(go, o);
 		}
 
 		public static T Dissolve<T>(this T c) where T : Component
 			=> DissolveImpl(c.gameObject, c);
 
-		public static T Dissolve<T>(this Component c) where T : new()
-		{
+		public static T Dissolve<T>(this Component c) where T : new() {
 			return DissolveImpl(c.gameObject, new T());
 		}
 
-		public static T Dissolve<T, U>(this T c, Action<U> i) where T : Component
-		{
+		public static T Dissolve<T, U>(this T c, Action<U> i) where T : Component {
 			c.gameObject.Dissolve(i);
 			return c;
 		}
 
-		public static T Dissolve<T>(this T c, ActionContainer i) where T : Component
-		{
+		public static T Dissolve<T>(this T c, ActionContainer i) where T : Component {
 			c.gameObject.Dissolve(i);
 			return c;
 		}
 
-		public static T Dissolve<T>(this T c, params ActionContainer[] i) where T : Component
-		{
+		public static T Dissolve<T>(this T c, params ActionContainer[] i) where T : Component {
 			c.gameObject.Dissolve(i);
 			return c;
 		}

@@ -4,10 +4,8 @@ using System.Text.RegularExpressions;
 using SystemEx;
 using UnityEngine;
 
-namespace UnityDissolve
-{
-	public static class TransformEx
-	{
+namespace UnityDissolve {
+	public static class TransformEx {
 		/// <summary>
 		/// Finds GameObject by path name. And returns it's Component T if it exists.
 		/// </summary>
@@ -15,8 +13,7 @@ namespace UnityDissolve
 		/// <param name="transform"></param>
 		/// <param name="name"></param>
 		/// <returns></returns>
-		public static T Find<T>(this Transform transform, string name) where T : Component
-		{
+		public static T Find<T>(this Transform transform, string name) where T : Component {
 			var t = transform.Find(name);
 
 			if (t != null)
@@ -30,25 +27,20 @@ namespace UnityDissolve
 		public static IEnumerable<GameObject> FindGameObject(this Transform transform, string name)
 			=> transform.FindGameObject(name.ToPath());
 
-		public static IEnumerable<GameObject> FindGameObject(this Transform transform, string[] path)
-		{
+		public static IEnumerable<GameObject> FindGameObject(this Transform transform, string[] path) {
 			GameObject root = transform.Elvis(t => t.gameObject);
 
-			if (path.IsEmptyPath())
-			{
+			if (path.IsEmptyPath()) {
 				yield return root;
 				yield break;
 			}
 
-			foreach (var pathi in path)
-			{
-				if (pathi == ".")
-				{
+			foreach (var pathi in path) {
+				if (pathi == ".") {
 					continue;
 				}
 
-				if (pathi == "..")
-				{
+				if (pathi == "..") {
 					if (root == null)
 						yield break;
 
@@ -56,39 +48,32 @@ namespace UnityDissolve
 					continue;
 				}
 
-				if (pathi.IsNullOrWhiteSpace())
-				{
+				if (pathi.IsNullOrWhiteSpace()) {
 					root = null;
 					continue;
 				}
 
-				if (pathi == "*")
-				{
-					foreach (Transform t in root.transform)
-					{
+				if (pathi == "*") {
+					foreach (Transform t in root.transform) {
 						yield return t.gameObject;
 					}
 					yield break;
 				}
 
 				var rePathi = pathi.Replace("*", "*?");
-				if (rePathi.Length > pathi.Length)
-				{
+				if (rePathi.Length > pathi.Length) {
 					var re = new Regex(rePathi);
-					foreach (Transform t in root.transform)
-					{
+					foreach (Transform t in root.transform) {
 						if (re.Match(t.gameObject.name).Success)
 							yield return t.gameObject;
 					}
 					yield break;
 				}
 
-				if (root == null)
-				{
+				if (root == null) {
 					root = GameObject.Find("/" + pathi);
 				}
-				else
-				{
+				else {
 					root = root.transform.Find(pathi).Elvis(t => t.gameObject);
 				}
 
@@ -102,8 +87,7 @@ namespace UnityDissolve
 			Debug.LogWarning(string.Format("No child GameObject '{0}' found.", path.FromPath()));
 		}
 
-		public static object Find(this Transform transform, string name, Type type)
-		{
+		public static object Find(this Transform transform, string name, Type type) {
 			var t = !string.IsNullOrEmpty(name) ? transform.Find(name) : transform;
 
 			if (t != null)
@@ -114,10 +98,8 @@ namespace UnityDissolve
 			return null;
 		}
 
-		public static IEnumerable<Transform> Find(this Transform transform, Func<Transform, bool> f)
-		{
-			foreach (Transform child in transform)
-			{
+		public static IEnumerable<Transform> Find(this Transform transform, Func<Transform, bool> f) {
+			foreach (Transform child in transform) {
 				if (f(child))
 					yield return child;
 			}
