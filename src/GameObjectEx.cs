@@ -86,17 +86,22 @@ namespace UnityDissolve {
 		static ConditionalWeakTable<GameObject, GameObjectTree> gameObjectTrees = new();
 
 		public static IEnumerable<GameObject> FindGameObject(this GameObject go, string name) {
+			int pi = 0;
 			var path = name.ToPath().SimplifyPath();
-			for (int i = 0; i < path.Length; i++) {
-				if (path[i] == "..") {
+			for (pi = 0; pi < path.Length; pi++) {
+				if (path[pi] == "..") {
 					go = go.transform.parent.Elvis(t => t.gameObject);
 					if (go == null)
 						yield break;
 				}
-				else {
-					path = path.Skip(i);
+				else
 					break;
-				}
+			}
+			path = path.Skip(pi);
+
+			if (path.Length == 0) {
+				yield return go;
+				yield break;
 			}
 
 			var got = gameObjectTrees.GetValue(go, go => new GameObjectTree { go = go.weak() });
